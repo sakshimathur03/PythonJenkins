@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+    environment {
+        AZURE_CREDENTIALS_ID = 'azure-service-principal'
+        RESOURCE_GROUP = 'rg-jenkins'
+        APP_SERVICE_NAME = 'webapijenkins2543'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/sakshimathur03/PythonJenkins.git'
+            }
+        }
+
+        stage('Setup Python') {
+            steps {
+                bat "python -m venv venv"  // Create virtual environment
+                bat "venv\\Scripts\\activate" // Activate virtual environment
+                bat "pip install --upgrade pip" // Upgrade pip
+                bat "pip install -r requirements.txt" // Install dependencies
+            }
+        }
+
+        stage('Package Application') {
+            steps {
+                bat "powershell Compress-Archive -Path * -DestinationPath app.zip -Force"
+            }
+        }
+
+        stage('Deploy to Azure') {
+            steps {
+                withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
+                    bat "az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID"
+                    bat "az webapp up --resource-group $RESOURCE_GROUP --name $APP_SERVICE_NAME --runtime PYTHON:$PYTHON_VERSION --src-path app.zip"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '🎉 Deployment Successful!'
+        }
+        failure {
+            echo '❌ Deployment Failed!'
+        }
+    }
+}
