@@ -5,7 +5,7 @@ pipeline {
         AZURE_CREDENTIALS_ID = 'azure-service-principal'  // Jenkins credential ID for Azure
         RESOURCE_GROUP = 'rg-jenkins'
         APP_SERVICE_NAME = 'webapijenkins2543'
-        PYTHON_VERSION = '3.10'
+        PYTHON_VERSION = '3.12.8'
     }
 
     stages {
