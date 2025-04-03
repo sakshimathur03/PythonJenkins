@@ -6,7 +6,7 @@ pipeline {
         RESOURCE_GROUP = 'rg-jenkins'
         APP_SERVICE_NAME = 'webapijenkins2543'
         PYTHON_VERSION = '3.12.8'
-        PATH = "C:\Users\HP\AppData\Local\Programs\Python\Python312\python.exe\Scripts"
+        PATH = "C:/Users/HP/AppData/Local/Programs/Python/Python312/Scripts;${env.PATH}"
     }
 
     stages {
