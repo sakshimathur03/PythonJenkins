@@ -39,12 +39,14 @@ pipeline {
             }
         }
 
-        stage('Package Application') {
-            steps {
-                bat 'if exist app.zip del app.zip'
-                bat 'powershell Compress-Archive -Path * -DestinationPath app.zip -Force'
-            }
-        }
+       stage('Package Application') {
+    steps {
+        bat 'if not exist publish mkdir publish'
+        bat 'if exist publish.zip del publish.zip'
+        bat 'powershell if (Test-Path publish) { Compress-Archive -Path publish -DestinationPath publish.zip -Force } else { Write-Host "⚠️ Directory publish does not exist. Skipping compression." }'
+    }
+}
+
 
         stage('Deploy to Azure') {
             steps {
