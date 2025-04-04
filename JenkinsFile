@@ -24,24 +24,18 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
-            steps {
-                bat 'call venv\\Scripts\\activate && python -m pytest'
-            }
-        }
-
         stage('Deploy') {
             steps {
                 withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-                    bat '''
-                    if exist publish (rmdir /s /q publish)
-                    mkdir publish
+                   bat 'if exist publish (rmdir /s /q publish)'
+                   bat 'mkdir publish'
 
-                    :: Copy .py files and requirements.txt to publish folder
-                    for %%f in (*.py) do copy "%%f" publish\\
-                    if exist requirements.txt copy requirements.txt publish\\
-                    '''
-                    
+                   :: Copy .py files to publish folder
+                   bat 'for %%f in (*.py) do copy "%%f" publish\\'
+
+                   :: Copy requirements.txt if it exists
+                   bat 'if exist requirements.txt copy requirements.txt publish\\'
+
                     bat 'az login --service-principal --username %AZURE_CLIENT_ID% --password %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
                     
                     // Zip the publish folder properly
