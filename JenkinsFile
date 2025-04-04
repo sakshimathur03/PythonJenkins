@@ -5,7 +5,7 @@ pipeline {
         AZURE_CREDENTIALS_ID = 'azure-service-principal'
         RESOURCE_GROUP = 'rg-jenkins'
         APP_SERVICE_NAME = 'MyWebApplication03'
-        PYTHON_PATH = 'C:\Users\HP\AppData\Local\Programs\Python\Python312\python.exe'
+        PYTHON_PATH = 'C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python312\\python.exe'
     }
 
     stages {
