@@ -43,6 +43,7 @@ pipeline {
                 bat 'if not exist publish mkdir publish'
                 bat 'if exist publish.zip del publish.zip'
                 bat 'powershell Compress-Archive -Path publish/* -DestinationPath publish.zip -Force'
+                bat 'dir public.zip'
             }
         }
 
