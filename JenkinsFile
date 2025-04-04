@@ -1,9 +1,12 @@
 pipeline {
     agent any
+
     environment {
-        AZURE_CREDENTIALS_ID = 'azure-service-principal'
+        AZURE_CREDENTIALS_ID = 'azure-service-principal'  // Jenkins credential ID for Azure
         RESOURCE_GROUP = 'rg-jenkins'
         APP_SERVICE_NAME = 'MyWebApplication03'
+        PYTHON_VERSION = '3.12.8'
+        PATH = "C:/Users/HP/AppData/Local/Programs/Python/Python312;C:/Users/HP/AppData/Local/Programs/Python/Python312/Scripts;${env.PATH}"
     }
 
     stages {
@@ -13,25 +16,42 @@ pipeline {
             }
         }
 
-        stage('Setup Python Environment') {
+        stage('Verify Python Installation') {
+            steps {
+                bat 'echo PATH is %PATH%'
+                bat 'where python'
+                script {
+                    def pythonCheck = bat(script: 'where python', returnStatus: true)
+                    if (pythonCheck != 0) {
+                        error("❌ Python is not installed or not found in PATH!")
+                    }
+                }
+                bat 'python --version'
+            }
+        }
+
+        stage('Setup Python Virtual Environment') {
             steps {
                 bat 'python -m venv venv'
-                bat 'venv\\Scripts\\activate && pip install -r requirements.txt'
+                bat 'call venv\\Scripts\\activate'
+                bat 'call venv\\Scripts\\activate & python -m pip install --upgrade pip'
+                bat 'call venv\\Scripts\\activate & pip install -r requirements.txt'
             }
         }
 
-        stage('Run Tests') {
+        stage('Package Application') {
             steps {
-                bat 'venv\\Scripts\\activate && pytest tests/'
+                bat 'if exist app.zip del app.zip'
+                bat 'powershell Compress-Archive -Path * -DestinationPath app.zip -Force'
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to Azure') {
             steps {
                 withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-                    bat "az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID"
-                    bat "powershell Compress-Archive -Path ./* -DestinationPath ./deploy.zip -Force"
-                    bat "az webapp deploy --resource-group $RESOURCE_GROUP --name $APP_SERVICE_NAME --src-path ./deploy.zip --type zip"
+                    withAzureCLI(credentialsId: AZURE_CREDENTIALS_ID) {
+                        bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path app.zip --type zip'
+                    }
                 }
             }
         }
@@ -39,10 +59,10 @@ pipeline {
 
     post {
         success {
-            echo 'Deployment Successful!'
+            echo '🎉 Deployment Successful!'
         }
         failure {
-            echo 'Deployment Failed!'
+            echo '❌ Deployment Failed! Check logs for errors.'
         }
     }
 }
