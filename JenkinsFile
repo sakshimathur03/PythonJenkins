@@ -42,7 +42,15 @@ pipeline {
             steps {
                 bat 'if not exist publish mkdir publish'
                 bat 'if exist publish.zip del publish.zip'
-                bat 'powershell Compress-Archive -Path .\\publish\\* -DestinationPath .\\publish.zip -Force'
+
+                // Ensure all required files are copied into publish folder
+                bat 'xcopy /E /I * publish'
+
+                // Zip the publish folder
+                bat 'powershell Compress-Archive -Path publish\\* -DestinationPath publish.zip -Force'
+
+                // Verify if zip file is created
+                bat 'if not exist publish.zip (echo "Error: publish.zip not created!" & exit 1)'
             }
         }
 
