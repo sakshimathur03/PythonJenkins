@@ -4,9 +4,9 @@ pipeline {
     environment {
         AZURE_CREDENTIALS_ID = 'azure-service-principal'  // Jenkins credential ID for Azure
         RESOURCE_GROUP = 'rg-jenkins'
-        APP_SERVICE_NAME = ' MyWebApplication03'
+        APP_SERVICE_NAME = 'MyWebApplication03'
         PYTHON_VERSION = '3.12.8'
-        PATH = "C:/Users/HP/AppData/Local/Programs/Python/Python312/Scripts;${env.PATH}"
+        PATH = "C:/Users/HP/AppData/Local/Programs/Python/Python312;C:/Users/HP/AppData/Local/Programs/Python/Python312/Scripts;${env.PATH}"
     }
 
     stages {
@@ -18,10 +18,12 @@ pipeline {
 
         stage('Verify Python Installation') {
             steps {
+                bat "echo PATH is %PATH%"
+                bat "where python"
                 script {
                     def pythonCheck = bat(script: "where python", returnStatus: true)
                     if (pythonCheck != 0) {
-                        error("Python is not installed or not found in PATH!")
+                        error("❌ Python is not installed or not found in PATH!")
                     }
                 }
                 bat "python --version"
@@ -30,10 +32,9 @@ pipeline {
 
         stage('Setup Python Virtual Environment') {
             steps {
-                bat "python -m venv venv"  // Create virtual environment
-                bat "call venv\\Scripts\\activate" // Activate virtual environment
-                bat "pip install --upgrade pip" // Upgrade pip
-                bat "pip install -r requirements.txt" // Install dependencies
+                bat "python -m venv venv"
+                bat "call venv\\Scripts\\activate & python -m pip install --upgrade pip"
+                bat "call venv\\Scripts\\activate & pip install -r requirements.txt"
             }
         }
 
@@ -47,11 +48,8 @@ pipeline {
             steps {
                 withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
                     script {
-                        def loginCommand = "az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%"
-                        def deployCommand = "az webapp up --resource-group ${RESOURCE_GROUP} --name ${APP_SERVICE_NAME} --runtime PYTHON:${PYTHON_VERSION} --src-path app.zip"
-                        
-                        bat loginCommand
-                        bat deployCommand
+                        bat 'az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
+                        bat "az webapp up --resource-group ${RESOURCE_GROUP} --name ${APP_SERVICE_NAME} --runtime PYTHON:${PYTHON_VERSION} --src-path app.zip"
                     }
                 }
             }
