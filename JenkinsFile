@@ -5,6 +5,7 @@ pipeline {
         AZURE_CREDENTIALS_ID = 'azure-service-principal'
         RESOURCE_GROUP = 'rg-jenkins'
         APP_SERVICE_NAME = 'MyWebApplication03'
+        PYTHON_PATH = 'C:\\Users\\NAITIK JAIN\\AppData\\Local\\Programs\\Python\\Python312\\python.exe'
     }
 
     stages {
@@ -16,19 +17,20 @@ pipeline {
 
         stage('Set Up Python Environment') {
             steps {
-                bat '"C:\\Users\\NAITIK JAIN\\AppData\\Local\\Programs\\Python\\Python312\\python.exe" -m venv venv'
-                bat '.\\venv\\Scripts\\activate && .\\venv\\Scripts\\python.exe -m pip install --upgrade pip'
-                bat '.\\venv\\Scripts\\activate && .\\venv\\Scripts\\python.exe -m pip install -r requirements.txt'
-                bat '.\\venv\\Scripts\\activate && .\\venv\\Scripts\\python.exe -m pip install pytest'
+                bat '"%PYTHON_PATH%" -m venv venv'
+                bat 'call venv\\Scripts\\activate && python -m pip install --upgrade pip'
+                bat 'call venv\\Scripts\\activate && pip install -r requirements.txt'
+                bat 'call venv\\Scripts\\activate && pip install pytest'
             }
         }
 
         stage('Run Tests') {
             steps {
-                bat '.\\venv\\Scripts\\activate && .\\venv\\Scripts\\python.exe -m pytest'
+                bat 'call venv\\Scripts\\activate && python -m pytest'
             }
         }
-     stage('Deploy') {
+
+        stage('Deploy') {
             steps {
                 withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
                     bat '''
@@ -39,9 +41,17 @@ pipeline {
                     for %%f in (*.py) do copy "%%f" publish\\
                     if exist requirements.txt copy requirements.txt publish\\
                     '''
-                    bat 'az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
-                    bat 'powershell Compress-Archive -Path ./publish/* -DestinationPath ./publish.zip -Force'
-                    bat 'az webapp deploy --resource-group %RESOURCE_GROUP% --name %APP_SERVICE_NAME% --src-path ./publish.zip --type zip'
+                    
+                    bat 'az login --service-principal --username %AZURE_CLIENT_ID% --password %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
+                    
+                    // Zip the publish folder properly
+                    bat 'powershell Compress-Archive -Path publish\\* -DestinationPath publish.zip -Force'
+                    
+                    // Ensure publish.zip exists before deployment
+                    bat 'if not exist publish.zip (echo "Error: publish.zip not created!" & exit 1)'
+
+                    // Deploy the zip file
+                    bat 'az webapp deploy --resource-group %RESOURCE_GROUP% --name %APP_SERVICE_NAME% --src-path "%CD%\\publish.zip" --type zip'
                 }
             }
         }
@@ -49,12 +59,11 @@ pipeline {
 
     post {
         failure {
-            echo 'Deployment Failed!'
+            echo 'Deployment Failed! Check logs for errors.'
         }
         success {
             echo 'Deployment Successful!'
         }
-    }
+    }
 }
-
 
