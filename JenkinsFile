@@ -23,7 +23,7 @@ pipeline {
                 script {
                     def pythonCheck = bat(script: 'where python', returnStatus: true)
                     if (pythonCheck != 0) {
-                        error("❌ Python is not installed or not found in PATH!")
+                        error(" Python is not installed or not found in PATH!")
                     }
                 }
                 bat 'python --version'
@@ -51,9 +51,8 @@ pipeline {
         stage('Deploy to Azure') {
             steps {
               withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-                    bat "az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID"
-                    bat "powershell Compress-Archive -Path ./publish/* -DestinationPath ./publish.zip -Force"
-                    bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path app.zip --type zip'
+                    bat 'az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID'
+                    bat 'az webapp deploy --resource-group  RESOURCE_GROUP --name APP_SERVICE_NAME --src-path app.zip --type zip'
                     }
                 }
             }
@@ -62,10 +61,10 @@ pipeline {
 
     post {
         success {
-            echo '🎉 Deployment Successful!'
+            echo ' Deployment Successful!'
         }
         failure {
-            echo '❌ Deployment Failed! Check logs for errors.'
+            echo 'Deployment Failed! Check logs for errors.'
         }
     }
 }
