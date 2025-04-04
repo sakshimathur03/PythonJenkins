@@ -18,40 +18,39 @@ pipeline {
 
         stage('Verify Python Installation') {
             steps {
-                bat "echo PATH is %PATH%"
-                bat "where python"
+                bat 'echo PATH is %PATH%'
+                bat 'where python'
                 script {
-                    def pythonCheck = bat(script: "where python", returnStatus: true)
+                    def pythonCheck = bat(script: 'where python', returnStatus: true)
                     if (pythonCheck != 0) {
                         error("❌ Python is not installed or not found in PATH!")
                     }
                 }
-                bat "python --version"
+                bat 'python --version'
             }
         }
 
         stage('Setup Python Virtual Environment') {
             steps {
-                bat "python -m venv venv"
-                bat "call venv\\Scripts\\activate & python -m pip install --upgrade pip"
-                bat "call venv\\Scripts\\activate & pip install -r requirements.txt"
+                bat 'python -m venv venv'
+                bat 'call venv\\Scripts\\activate'
+                bat 'call venv\\Scripts\\activate & python -m pip install --upgrade pip'
+                bat 'call venv\\Scripts\\activate & pip install -r requirements.txt'
             }
         }
 
         stage('Package Application') {
             steps {
-                bat "powershell Compress-Archive -Path * -DestinationPath app.zip -Force"
+                // Ensure you're packaging only the necessary files
+                bat 'powershell -Command "Compress-Archive -Path * -DestinationPath app.zip -Force"'
             }
         }
 
         stage('Deploy to Azure') {
             steps {
                 withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-                    script {
-                        bat 'az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
-                        bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path app.zip --type zip'
-
-                    }
+                    bat 'az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
+                    bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path app.zip --type zip'
                 }
             }
         }
