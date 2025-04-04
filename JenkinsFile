@@ -41,18 +41,17 @@ pipeline {
 
         stage('Package Application') {
             steps {
-                // Ensure you're packaging only the necessary files
-                bat 'powershell Compress-Archive -Path * -DestinationPath app.zip'
+                bat 'if exist app.zip del app.zip'
+                bat 'powershell Compress-Archive -Path * -DestinationPath app.zip -Force'
             }
         }
 
         stage('Deploy to Azure') {
             steps {
                 withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-                    bat 'az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
-                    bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path app.zip --type zip'
-
-
+                    withAzureCLI(credentialsId: AZURE_CREDENTIALS_ID) {
+                        bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path app.zip --type zip'
+                    }
                 }
             }
         }
