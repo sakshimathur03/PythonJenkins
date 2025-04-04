@@ -2,11 +2,9 @@ pipeline {
     agent any
 
     environment {
-        AZURE_CREDENTIALS_ID = 'azure-service-principal'  // Jenkins credential ID for Azure
+        AZURE_CREDENTIALS_ID = 'azure-service-principal'
         RESOURCE_GROUP = 'rg-jenkins'
         APP_SERVICE_NAME = 'MyWebApplication03'
-        PYTHON_VERSION = '3.12'
-        PATH = "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python312;C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python312\\Scripts;${env.PATH}"
     }
 
     stages {
@@ -16,60 +14,46 @@ pipeline {
             }
         }
 
-        stage('Verify Python Installation') {
+        stage('Set Up Python Environment') {
             steps {
-                bat 'echo PATH is %PATH%'
-                bat 'where python'
-                script {
-                    def pythonCheck = bat(script: 'where python', returnStatus: true)
-                    if (pythonCheck != 0) {
-                        error("Python is not installed or not found in PATH!")
-                    }
-                }
-                bat 'python --version'
+                bat '"C:\\Users\\NAITIK JAIN\\AppData\\Local\\Programs\\Python\\Python312\\python.exe" -m venv venv'
+                bat '.\\venv\\Scripts\\activate && .\\venv\\Scripts\\python.exe -m pip install --upgrade pip'
+                bat '.\\venv\\Scripts\\activate && .\\venv\\Scripts\\python.exe -m pip install -r requirements.txt'
+                bat '.\\venv\\Scripts\\activate && .\\venv\\Scripts\\python.exe -m pip install pytest'
             }
         }
 
-        stage('Setup Python Virtual Environment') {
+        stage('Run Tests') {
             steps {
-                bat 'python -m venv venv'
-                bat 'call venv\\Scripts\\activate && python -m pip install --upgrade pip'
-                bat 'call venv\\Scripts\\activate && pip install -r requirements.txt'
+                bat '.\\venv\\Scripts\\activate && .\\venv\\Scripts\\python.exe -m pytest'
             }
         }
-
-        stage('Package Application') {
-            steps {
-                bat 'if not exist publish mkdir publish'
-                bat 'if exist publish.zip del publish.zip'
-
-                // Ensure all required files are copied into publish folder
-                bat 'xcopy /E /I * publish'
-
-                // Zip the publish folder
-                bat 'powershell Compress-Archive -Path publish\\* -DestinationPath publish.zip -Force'
-
-                // Verify if zip file is created
-                bat 'if not exist publish.zip (echo "Error: publish.zip not created!" & exit 1)'
-            }
-        }
-
-        stage('Deploy to Azure') {
+     stage('Deploy') {
             steps {
                 withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-                    bat 'az login --service-principal --username %AZURE_CLIENT_ID% --password %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
-                    bat 'az webapp deploy --resource-group %RESOURCE_GROUP% --name %APP_SERVICE_NAME% --src-path "%CD%\\publish.zip" --type zip'
+                    bat '''
+                    if exist publish (rmdir /s /q publish)
+                    mkdir publish
+
+                    :: Copy .py files and requirements.txt to publish folder
+                    for %%f in (*.py) do copy "%%f" publish\\
+                    if exist requirements.txt copy requirements.txt publish\\
+                    '''
+                    bat 'az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
+                    bat 'powershell Compress-Archive -Path ./publish/* -DestinationPath ./publish.zip -Force'
+                    bat 'az webapp deploy --resource-group %RESOURCE_GROUP% --name %APP_SERVICE_NAME% --src-path ./publish.zip --type zip'
                 }
             }
         }
     }
 
     post {
+        failure {
+            echo 'Deployment Failed!'
+        }
         success {
             echo 'Deployment Successful!'
         }
-        failure {
-            echo 'Deployment Failed! Check logs for errors.'
-        }
-    }
+    }
 }
+
