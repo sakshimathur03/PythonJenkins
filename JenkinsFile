@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/yourusername/your-python-repo.git'
+                git branch: 'main', url: 'https://github.com/sakshimathur03/PythonJenkins.git'
             }
         }
 
