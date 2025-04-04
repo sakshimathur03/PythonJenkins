@@ -49,7 +49,7 @@ pipeline {
                 withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
                     script {
                         bat 'az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
-                        bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path app.zip'
+                        bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path app.zip --type zip'
 
                     }
                 }
