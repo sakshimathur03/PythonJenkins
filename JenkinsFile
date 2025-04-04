@@ -5,8 +5,8 @@ pipeline {
         AZURE_CREDENTIALS_ID = 'azure-service-principal'  // Jenkins credential ID for Azure
         RESOURCE_GROUP = 'rg-jenkins'
         APP_SERVICE_NAME = 'MyWebApplication03'
-        PYTHON_VERSION = '3.12.8'
-        PATH = "C:/Users/HP/AppData/Local/Programs/Python/Python312;C:/Users/HP/AppData/Local/Programs/Python/Python312/Scripts;${env.PATH}"
+        PYTHON_VERSION = '3.10'
+        PATH = "C:/Users/HP/AppData/Local/Programs/Python/Python310;C:/Users/HP/AppData/Local/Programs/Python/Python312/Scripts;${env.PATH}"
     }
 
     stages {
