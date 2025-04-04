@@ -32,7 +32,7 @@ pipeline {
                   bat 'mkdir publish'
 
                   bat 'echo Copying .py files to publish folder...'
-                  bat 'for %f in (*.py) do copy "%f" publish\\'
+                  bat 'for %%f in (*.py) do copy "%%f" publish\\'
 
                   bat 'echo Copying requirements.txt if it exists...'
                   bat 'if exist requirements.txt copy requirements.txt publish\\'
