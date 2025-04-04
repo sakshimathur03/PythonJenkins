@@ -53,7 +53,7 @@ pipeline {
               withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
                     bat "az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID"
                     bat "powershell Compress-Archive -Path ./publish/* -DestinationPath ./publish.zip -Force"
-                    bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path . --type zip'
+                    bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path C:\ProgramData\Jenkins\.jenkins\workspace\PythonPipeline --type zip'
                     }
                 }
             }
