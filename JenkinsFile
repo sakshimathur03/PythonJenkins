@@ -42,18 +42,18 @@ pipeline {
             steps {
                 bat 'if not exist publish mkdir publish'
                 bat 'if exist publish.zip del publish.zip'
-                bat 'powershell Compress-Archive -Path publish/* -DestinationPath publish.zip -Force'
-                bat 'dir public.zip'
+                bat 'powershell Compress-Archive -Path publish\\* -DestinationPath publish.zip -Force'
+                bat 'dir publish.zip'  // ✅ Verify file exists
             }
         }
 
         stage('Deploy to Azure') {
             steps {
                 withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-                    
-                   bat 'az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
-                   bat  'az webapp deploy --resource-group %RESOURCE_GROUP% --name %APP_SERVICE_NAME% --src-path ./public.zip --type zip'
-                    
+                    bat '''
+                    az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%
+                    az webapp deploy --resource-group %RESOURCE_GROUP% --name %APP_SERVICE_NAME% --src-path "%CD%\\publish.zip" --type zip
+                    '''
                 }
             }
         }
