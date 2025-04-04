@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        AZURE_CREDENTIALS_ID = 'azure-service-principal'  // Jenkins credential ID for Azure
+        AZURE_CREDENTIALS_ID = 'azure-service-principal' 
         RESOURCE_GROUP = 'rg-jenkins'
         APP_SERVICE_NAME = 'MyWebApplication03'
         PYTHON_VERSION = '3.12.8'
@@ -46,15 +46,16 @@ pipeline {
             }
         }
 
-       stage('Deploy to Azure') {
-    steps {
-        withCredentials([azureServicePrincipal(credentialsId: 'AZURE_CREDENTIALS_ID')]) {
-            withAzureCLI(credentialsId: 'AZURE_CREDENTIALS_ID') {
-                bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path app.zip --type zip'
-            }
-        }
-    }
-}
+                 stage('Deploy to Azure') {
+               steps {
+                   withCredentials([azureServicePrincipal('azure-service-principal')]) {
+                       bat 'az login --service-principal -u $AZURE_CREDENTIALS_USR -p $AZURE_CREDENTIALS_PSW --tenant $AZURE_CREDENTIALS_TEN'
+                       bat 'az webapp up --name myPythonApp --resource-group myResourceGroup --runtime "PYTHON:3.9" --src-path .'
+                   }
+               }
+           }
+       }
+
 
     }
 
