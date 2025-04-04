@@ -23,7 +23,7 @@ pipeline {
                 script {
                     def pythonCheck = bat(script: 'where python', returnStatus: true)
                     if (pythonCheck != 0) {
-                        error("❌ Python is not installed or not found in PATH!")
+                        error(" Python is not installed or not found in PATH!")
                     }
                 }
                 bat 'python --version'
@@ -60,10 +60,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Deployment Successful!'
+            echo ' Deployment Successful!'
         }
         failure {
-            echo '❌ Deployment Failed! Check logs for errors.'
+            echo 'Deployment Failed! Check logs for errors.'
         }
     }
 }
