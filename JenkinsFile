@@ -1,38 +1,62 @@
- pipeline {
-       agent any
-       environment {
-           AZURE_CREDENTIALS = credentials('azure-service-principal')
-           RESOURCE_GROUP = 'rg-jenkins'
-           APP_SERVICE_NAME = 'MyWebApplication03'
-           PYTHON_VERSION = '3.12.8'
-           PATH = "C:/Users/HP/AppData/Local/Programs/Python/Python312;C:/Users/HP/AppData/Local/Programs/Python/Python312/Scripts;${env.PATH}"
-       }
-       stages {
-           stage('Checkout') {
-               steps {
-                  git branch: 'main', url: 'https://github.com/sakshimathur03/PythonJenkins.git'
-               }
-           }
-           stage('Build') {
-               steps {
-                   bat 'pip install -r requirements.txt'
-               }
-           }
-           stage('Publish') {
-               steps {
-                   bat 'zip -r app.zip .'
-               }
-           }
-           stage('Deploy to Azure') {
-               steps {
-                   withCredentials([azureServicePrincipal('azure-service-principal')]) {
-                       bat 'az login --service-principal -u $AZURE_CREDENTIALS_USR -p $AZURE_CREDENTIALS_PSW --tenant $AZURE_CREDENTIALS_TEN'
-                         bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path app.zip --type zip'
-                   }
-               }
-           }
-       }
-post {
+pipeline {
+    agent any
+
+    environment {
+        AZURE_CREDENTIALS_ID = 'azure-service-principal'  // Jenkins credential ID for Azure
+        RESOURCE_GROUP = 'rg-jenkins'
+        APP_SERVICE_NAME = 'MyWebApplication03'
+        PYTHON_VERSION = '3.12.8'
+        PATH = "C:/Users/HP/AppData/Local/Programs/Python/Python312;C:/Users/HP/AppData/Local/Programs/Python/Python312/Scripts;${env.PATH}"
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/sakshimathur03/PythonJenkins.git'
+            }
+        }
+
+        stage('Verify Python Installation') {
+            steps {
+                bat 'echo PATH is %PATH%'
+                bat 'where python'
+                script {
+                    def pythonCheck = bat(script: 'where python', returnStatus: true)
+                    if (pythonCheck != 0) {
+                        error("❌ Python is not installed or not found in PATH!")
+                    }
+                }
+                bat 'python --version'
+            }
+        }
+
+        stage('Setup Python Virtual Environment') {
+            steps {
+                bat 'python -m venv venv'
+                bat 'call venv\\Scripts\\activate'
+                bat 'call venv\\Scripts\\activate & python -m pip install --upgrade pip'
+                bat 'call venv\\Scripts\\activate & pip install -r requirements.txt'
+            }
+        }
+
+        stage('Package Application') {
+            steps {
+                // Ensure you're packaging only the necessary files
+                bat 'powershell -Command "Compress-Archive -Path * -DestinationPath app.zip -Force"'
+            }
+        }
+
+        stage('Deploy to Azure') {
+            steps {
+                withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
+                    bat 'az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
+                    bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path app.zip --type zip'
+                }
+            }
+        }
+    }
+
+    post {
         success {
             echo '🎉 Deployment Successful!'
         }
@@ -41,4 +65,3 @@ post {
         }
     }
 }
-
