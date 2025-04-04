@@ -46,15 +46,16 @@ pipeline {
             }
         }
 
-        stage('Deploy to Azure') {
-            steps {
-                withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-                    withAzureCLI(credentialsId: AZURE_CREDENTIALS_ID) {
-                        bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path app.zip --type zip'
-                    }
-                }
+       stage('Deploy to Azure') {
+    steps {
+        withCredentials([azureServicePrincipal(credentialsId: 'AZURE_CREDENTIALS_ID')]) {
+            withAzureCLI(credentialsId: 'AZURE_CREDENTIALS_ID') {
+                bat 'az webapp deploy --resource-group rg-jenkins --name MyWebApplication03 --src-path app.zip --type zip'
             }
         }
+    }
+}
+
     }
 
     post {
