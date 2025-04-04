@@ -23,7 +23,7 @@ pipeline {
                 script {
                     def pythonCheck = bat(script: 'where python', returnStatus: true)
                     if (pythonCheck != 0) {
-                        error(" Python is not installed or not found in PATH!")
+                        error("❌ Python is not installed or not found in PATH!")
                     }
                 }
                 bat 'python --version'
@@ -33,38 +33,37 @@ pipeline {
         stage('Setup Python Virtual Environment') {
             steps {
                 bat 'python -m venv venv'
-                bat 'call venv\\Scripts\\activate'
                 bat 'call venv\\Scripts\\activate & python -m pip install --upgrade pip'
                 bat 'call venv\\Scripts\\activate & pip install -r requirements.txt'
             }
         }
 
-       stage('Package Application') {
-    steps {
-        bat 'if not exist publish mkdir publish'
-        bat 'if exist publish.zip del publish.zip'
-        bat 'powershell if (Test-Path publish) { Compress-Archive -Path publish -DestinationPath publish.zip -Force } else { Write-Host "⚠️ Directory publish does not exist. Skipping compression." }'
-    }
-}
-
+        stage('Package Application') {
+            steps {
+                bat 'if not exist publish mkdir publish'
+                bat 'if exist publish.zip del publish.zip'
+                bat 'powershell Compress-Archive -Path publish/* -DestinationPath publish.zip -Force'
+            }
+        }
 
         stage('Deploy to Azure') {
             steps {
-              withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-                    bat 'az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID'
-                    bat 'az webapp deploy --resource-group  RESOURCE_GROUP --name APP_SERVICE_NAME --src-path app.zip --type zip'
-                    }
+                withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
+                    
+                   bat 'az login --service-principal -u %AZURE_CLIENT_ID% -p %AZURE_CLIENT_SECRET% --tenant %AZURE_TENANT_ID%'
+                   bat  'az webapp deploy --resource-group %RESOURCE_GROUP% --name %APP_SERVICE_NAME% --src-path publish.zip --type zip'
+                    
                 }
             }
         }
-    
+    }
 
     post {
         success {
-            echo ' Deployment Successful!'
+            echo '✅ Deployment Successful!'
         }
         failure {
-            echo 'Deployment Failed! Check logs for errors.'
+            echo '❌ Deployment Failed! Check logs for errors.'
         }
     }
 }
